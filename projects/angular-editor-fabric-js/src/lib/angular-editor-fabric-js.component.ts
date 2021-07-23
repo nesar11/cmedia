@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
 import { fabric } from 'fabric';
 
 @Component({
@@ -29,8 +29,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
   public textString: string;
   public url: string | ArrayBuffer = '';
   public size: any = {
-    width: 900,
-    height: 300
+    width: 550,
+    height: 800
   };
 
   public json: any;
@@ -39,6 +39,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
   private imageEditor = false;
   public figureEditor = false;
   public selected: any;
+  @Input() animationSettings: { selectedAnimation: string, selectedPosition: string, duration: number };
 
   constructor() { }
 
@@ -117,11 +118,31 @@ export class FabricjsEditorComponent implements AfterViewInit {
     this.canvas.setHeight(this.size.height);
   }
 
+  animateCanvasObjects() {
+    this.canvas.getActiveObjects().forEach(object => {
+      object.animate(this.animationSettings.selectedPosition, 180, {
+        onChange: this.canvas.renderAll.bind(this.canvas),
+        duration: this.animationSettings.duration,
+        easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+      });
+    });
+  }
+
+  animateAllCanvasObjects() {
+    this.canvas.getObjects().forEach(object => {
+      object.animate(this.animationSettings.selectedPosition, 180, {
+        onChange: this.canvas.renderAll.bind(this.canvas),
+        duration: this.animationSettings.duration,
+        easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+      });
+    });
+  }
+
   // Block "Add text"
 
   addText() {
     if (this.textString) {
-      const text = new fabric.IText(this.textString, {
+      const text: fabric.Object = new fabric.IText(this.textString, {
         left: 10,
         top: 10,
         fontFamily: 'helvetica',
@@ -132,13 +153,21 @@ export class FabricjsEditorComponent implements AfterViewInit {
         fontWeight: '',
         hasRotatingPoint: true
       });
-
+      // this.animateObject(text);
       this.extend(text, this.randomId());
       this.canvas.add(text);
       this.selectItemAfterAdded(text);
       this.textString = '';
     }
   }
+
+  // animateObject(object: fabric.Object) {
+  //   object.animate(this.animationSettings.selectedPosition, 180, {
+  //     onChange: this.canvas.renderAll.bind(this.canvas),
+  //     duration: this.animationSettings.duration,
+  //     easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+  //   });
+  // }
 
   // Block "Add images"
 
@@ -154,6 +183,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
         cornerSize: 10,
         hasRotatingPoint: true,
       });
+      // this.animateObject(image);
       this.extend(image, this.randomId());
       this.canvas.add(image);
       this.selectItemAfterAdded(image);
@@ -175,6 +205,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
         });
         image.scaleToWidth(200);
         image.scaleToHeight(200);
+        // this.animateObject(image);
         this.extend(image, this.randomId());
         this.canvas.add(image);
         this.selectItemAfterAdded(image);
@@ -199,7 +230,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
   // Block "Add figure"
 
   addFigure(figure) {
-    let add: any;
+    let add: fabric.Object;
     switch (figure) {
       case 'rectangle':
         add = new fabric.Rect({
@@ -224,6 +255,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
         });
         break;
     }
+    // this.animateObject(add);
     this.extend(add, this.randomId());
     this.canvas.add(add);
     this.selectItemAfterAdded(add);
@@ -249,7 +281,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
 
   extend(obj, id) {
     obj.toObject = ((toObject) => {
-      return function() {
+      return function () {
         return fabric.util.object.extend(toObject.call(this), {
           id
         });
@@ -294,21 +326,21 @@ export class FabricjsEditorComponent implements AfterViewInit {
 
       if (typeof value === 'string') {
         if (value.includes('underline')) {
-          object.setSelectionStyles({underline: true});
+          object.setSelectionStyles({ underline: true });
         } else {
-          object.setSelectionStyles({underline: false});
+          object.setSelectionStyles({ underline: false });
         }
 
         if (value.includes('overline')) {
-          object.setSelectionStyles({overline: true});
+          object.setSelectionStyles({ overline: true });
         } else {
-          object.setSelectionStyles({overline: false});
+          object.setSelectionStyles({ overline: false });
         }
 
         if (value.includes('line-through')) {
-          object.setSelectionStyles({linethrough: true});
+          object.setSelectionStyles({ linethrough: true });
         } else {
-          object.setSelectionStyles({linethrough: false});
+          object.setSelectionStyles({ linethrough: false });
         }
       }
 
@@ -318,7 +350,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
     } else {
       if (typeof value === 'string') {
         if (value.includes('underline')) {
-        object.set('underline', true);
+          object.set('underline', true);
         } else {
           object.set('underline', false);
         }
@@ -363,7 +395,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
     const activeGroup = this.canvas.getActiveObjects();
 
     if (activeObject) {
-      let clone;
+      let clone: fabric.Object;
       switch (activeObject.type) {
         case 'rect':
           clone = new fabric.Rect(activeObject.toObject());
@@ -382,6 +414,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
           break;
       }
       if (clone) {
+        // this.animateObject(clone);
         clone.set({ left: 10, top: 10 });
         this.canvas.add(clone);
         this.selectItemAfterAdded(clone);
@@ -555,7 +588,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
 
   rasterize() {
     const image = new Image();
-    image.src = this.canvas.toDataURL({format: 'png'});
+    image.src = this.canvas.toDataURL({ format: 'png' });
     const w = window.open('');
     w.document.write(image.outerHTML);
   }

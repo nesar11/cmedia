@@ -51,3 +51,11 @@
     background-color: #dc3545 !important;
     border-color: #f3969a;
 }
+
+mat-form-field {
+  width: 200px;
+}
+
+.space-above {
+  margin-top: 10px;
+}

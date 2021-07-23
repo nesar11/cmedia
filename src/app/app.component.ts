@@ -1,4 +1,5 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { FabricjsEditorComponent } from 'projects/angular-editor-fabric-js/src/public-api';
 
 @Component({
@@ -6,10 +7,73 @@ import { FabricjsEditorComponent } from 'projects/angular-editor-fabric-js/src/p
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  title = 'CMedia Build';
+export class AppComponent implements OnInit {
+  title = 'angular-editor-fabric-js';
 
-  @ViewChild('canvas', {static: false}) canvas: FabricjsEditorComponent;
+  animationSettings: { selectedAnimation: string, selectedPosition: string, duration: number } = { selectedAnimation: 'easeInQuad', selectedPosition: 'left', duration: 500 };
+  public animationTypes = ['easeInQuad',
+    'easeOutQuad',
+    'easeInOutQuad',
+    'easeInCubic',
+    'easeOutCubic',
+    'easeInOutCubic',
+    'easeInQuart',
+    'easeOutQuart',
+    'easeInOutQuart',
+    'easeInQuint',
+    'easeOutQuint',
+    'easeInOutQuint',
+    'easeInSine',
+    'easeOutSine',
+    'easeInOutSine',
+    'easeInExpo',
+    'easeOutExpo',
+    'easeInOutExpo',
+    'easeInCirc',
+    'easeOutCirc',
+    'easeInOutCirc',
+    'easeInElastic',
+    'easeOutElastic',
+    'easeInOutElastic',
+    'easeInBack',
+    'easeOutBack',
+    'easeInOutBack',
+    'easeInBounce',
+    'easeOutBounce',
+    'easeInOutBounce'];
+
+  @ViewChild('canvas', { static: false }) canvas: FabricjsEditorComponent;
+
+  form: FormGroup;
+
+  constructor(private formBuilder: FormBuilder) { }
+
+  ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      animationType: [this.animationSettings.selectedAnimation],
+      position: [this.animationSettings.selectedPosition],
+      duration: [this.animationSettings.duration]
+    });
+  }
+
+  applyAnimation() {
+    this.animationSettings.selectedAnimation = this.form.get('animationType').value;
+  }
+
+  applyPosition() {
+    this.animationSettings.selectedPosition = this.form.get('position').value;
+  }
+
+  applyDuration() {
+    this.animationSettings.duration = this.form.get('duration').value;
+  }
+  animateCanvasObjects() {
+    this.canvas.animateCanvasObjects();
+  }
+
+  animateAllCanvasObjects() {
+    this.canvas.animateAllCanvasObjects();
+  }
 
   public rasterize() {
     this.canvas.rasterize();
