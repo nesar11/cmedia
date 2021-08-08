@@ -71,7 +71,6 @@ export class FabricjsEditorComponent implements AfterViewInit {
     if (this.canvas.backgroundColor.toString() == '') {
       vid.style.cssText = 'background-color: white';
     }
-    console.log(this.canvas.backgroundColor)
     new_window.document.body.appendChild(vid);
     const a = new_window.document.createElement('a');
     a.download = 'myvid.webm';
@@ -95,7 +94,6 @@ export class FabricjsEditorComponent implements AfterViewInit {
         }
       });
       timer(this.animationTime).subscribe(() => {
-        console.log('video recording stopped');
         this.rec.stop();
       });
     });
