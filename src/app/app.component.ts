@@ -56,6 +56,10 @@ export class AppComponent implements OnInit {
     });
   }
 
+  previewAnimation() {
+    this.canvas.previewAnimation();
+  }
+
   applyAnimation() {
     this.animationSettings.selectedAnimation = this.form.get('animationType').value;
   }
@@ -73,6 +77,10 @@ export class AppComponent implements OnInit {
 
   animateAllCanvasObjects() {
     this.canvas.animateAllCanvasObjects();
+  }
+
+  previewVideo() {
+    this.canvas.previewVideo();
   }
 
   public rasterize() {

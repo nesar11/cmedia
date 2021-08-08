@@ -45,9 +45,14 @@
 }
 
 mat-form-field {
-  width: 200px;
+  width: 100%;
 }
 
 .space-above {
   margin-top: 10px;
+}
+
+mat-icon {
+  font-size: 40px;
+  color: #dc3545;
 }

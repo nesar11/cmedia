@@ -1,6 +1,8 @@
 import { Component, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
 import { fabric } from 'fabric';
+import { timer } from 'rxjs';
 
+declare var MediaRecorder: any;
 @Component({
   selector: 'angular-editor-fabric-js',
   templateUrl: './angular-editor-fabric-js.component.html',
@@ -10,6 +12,9 @@ export class FabricjsEditorComponent implements AfterViewInit {
   @ViewChild('htmlCanvas') htmlCanvas: ElementRef;
 
   private canvas: fabric.Canvas;
+  canvasObjects: fabric.Object[];
+  animationTime: number = 500;
+  backgroundColor: any;
   public props = {
     canvasFill: '#ffffff',
     canvasImage: '',
@@ -41,10 +46,76 @@ export class FabricjsEditorComponent implements AfterViewInit {
   public selected: any;
   @Input() animationSettings: { selectedAnimation: string, selectedPosition: string, duration: number };
 
+  objectId = 1;
+  mediaChunks = []
+  rec: any;
+
   constructor() { }
+
+  startRecording() {
+    this.declareRecording();
+    this.rec.start();
+    // this.rec.pause();
+    // this.rec.resume();
+    this.rec.ondataavailable = e => this.mediaChunks.push(e.data);
+    // this.rec.onstop = e => this.exportVid(new Blob(this.mediaChunks, { type: 'video/webm' }));
+  }
+
+  exportVid(blob: any) {
+
+    const new_window = window.open('', '_blank');
+
+    const vid = new_window.document.createElement('video');
+    vid.src = URL.createObjectURL(blob);
+    vid.controls = true;
+    if (this.canvas.backgroundColor.toString() == '') {
+      vid.style.cssText = 'background-color: white';
+    }
+    console.log(this.canvas.backgroundColor)
+    new_window.document.body.appendChild(vid);
+    const a = new_window.document.createElement('a');
+    a.download = 'myvid.webm';
+    a.href = vid.src;
+    new_window.document.body.appendChild(a);
+  }
+
+  previewAnimation() {
+    this.canvasObjects = this.canvas.getObjects();
+    this.backgroundColor = this.canvas.backgroundColor;
+    this.canvas.clear();
+    timer(1000).subscribe(() => {
+      this.canvas.backgroundColor = this.backgroundColor;
+      this.startRecording();
+      this.canvasObjects.forEach(eachObject => {
+        this.canvas.add(eachObject);
+        if (eachObject['animationData']) {
+          eachObject.animate(eachObject['animationData']['position'],
+            eachObject['animationData']['direction'],
+            eachObject['animationData']['metaData']);
+        }
+      });
+      timer(this.animationTime).subscribe(() => {
+        console.log('video recording stopped');
+        this.rec.stop();
+      });
+    });
+  }
+
+  previewVideo() {
+    // this.rec.stop();
+    this.exportVid(new Blob(this.mediaChunks, { type: 'video/webm' }));
+    location.reload();
+  }
+
+  declareRecording() {
+    var canvas = document.querySelector("canvas");
+    const stream = canvas.captureStream(25);
+    this.rec = new MediaRecorder(stream);
+  }
 
   ngAfterViewInit(): void {
 
+    // this.declareRecording();
     // setup front side canvas
     this.canvas = new fabric.Canvas(this.htmlCanvas.nativeElement, {
       hoverCursor: 'pointer',
@@ -119,23 +190,57 @@ export class FabricjsEditorComponent implements AfterViewInit {
   }
 
   animateCanvasObjects() {
-    this.canvas.getActiveObjects().forEach(object => {
-      object.animate(this.animationSettings.selectedPosition, 180, {
-        onChange: this.canvas.renderAll.bind(this.canvas),
-        duration: this.animationSettings.duration,
-        easing: fabric.util.ease[this.animationSettings.selectedAnimation]
-      });
+    const moveDeviation = this.animationSettings.selectedPosition === 'left'
+      ? this.size.width / 2
+      : this.animationSettings.selectedPosition === 'top'
+        ? this.size.height / 2
+        : 180;
+    this.canvas.getActiveObjects().forEach(eachObject => {
+      this.animationTime = this.animationTime + this.animationSettings.duration
+      eachObject['animationData'] = {
+        position: this.animationSettings.selectedPosition,
+        direction: moveDeviation,
+        metaData: {
+          onChange: this.canvas.renderAll.bind(this.canvas),
+          duration: this.animationSettings.duration,
+          easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+        }
+      };
     });
+    // this.canvas.getActiveObjects().forEach(object => {
+    //   object.animate(this.animationSettings.selectedPosition, moveDeviation, {
+    //     onChange: this.canvas.renderAll.bind(this.canvas),
+    //     duration: this.animationSettings.duration,
+    //     easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+    //   });
+    // });
   }
 
   animateAllCanvasObjects() {
-    this.canvas.getObjects().forEach(object => {
-      object.animate(this.animationSettings.selectedPosition, 180, {
-        onChange: this.canvas.renderAll.bind(this.canvas),
-        duration: this.animationSettings.duration,
-        easing: fabric.util.ease[this.animationSettings.selectedAnimation]
-      });
+    const moveDeviation = this.animationSettings.selectedPosition === 'left'
+      ? this.size.width / 2
+      : this.animationSettings.selectedPosition === 'top'
+        ? this.size.height / 2
+        : 180;
+    this.canvas.getObjects().forEach(eachObject => {
+      this.animationTime = this.animationTime + this.animationSettings.duration
+      eachObject['animationData'] = {
+        position: this.animationSettings.selectedPosition,
+        direction: moveDeviation,
+        metaData: {
+          onChange: this.canvas.renderAll.bind(this.canvas),
+          duration: this.animationSettings.duration,
+          easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+        }
+      };
     });
+    // this.canvas.getObjects().forEach(object => {
+    //   object.animate(this.animationSettings.selectedPosition, moveDeviation, {
+    //     onChange: this.canvas.renderAll.bind(this.canvas),
+    //     duration: this.animationSettings.duration,
+    //     easing: fabric.util.ease[this.animationSettings.selectedAnimation]
+    //   });
+    // });
   }
 
   // Block "Add text"
@@ -151,23 +256,19 @@ export class FabricjsEditorComponent implements AfterViewInit {
         scaleX: 0.5,
         scaleY: 0.5,
         fontWeight: '',
-        hasRotatingPoint: true
+        hasRotatingPoint: true,
       });
-      // this.animateObject(text);
       this.extend(text, this.randomId());
+      this.addIdentifierToObject(text);
       this.canvas.add(text);
       this.selectItemAfterAdded(text);
       this.textString = '';
     }
   }
 
-  // animateObject(object: fabric.Object) {
-  //   object.animate(this.animationSettings.selectedPosition, 180, {
-  //     onChange: this.canvas.renderAll.bind(this.canvas),
-  //     duration: this.animationSettings.duration,
-  //     easing: fabric.util.ease[this.animationSettings.selectedAnimation]
-  //   });
-  // }
+  addIdentifierToObject(object: any) {
+    object['id'] = this.objectId++;
+  }
 
   // Block "Add images"
 
@@ -183,8 +284,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
         cornerSize: 10,
         hasRotatingPoint: true,
       });
-      // this.animateObject(image);
       this.extend(image, this.randomId());
+      this.addIdentifierToObject(image);
       this.canvas.add(image);
       this.selectItemAfterAdded(image);
     });
@@ -205,8 +306,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
         });
         image.scaleToWidth(200);
         image.scaleToHeight(200);
-        // this.animateObject(image);
         this.extend(image, this.randomId());
+        this.addIdentifierToObject(image);
         this.canvas.add(image);
         this.selectItemAfterAdded(image);
       });
@@ -255,8 +356,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
         });
         break;
     }
-    // this.animateObject(add);
     this.extend(add, this.randomId());
+    this.addIdentifierToObject(add);
     this.canvas.add(add);
     this.selectItemAfterAdded(add);
   }
@@ -414,8 +515,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
           break;
       }
       if (clone) {
-        // this.animateObject(clone);
         clone.set({ left: 10, top: 10 });
+        this.addIdentifierToObject(clone);
         this.canvas.add(clone);
         this.selectItemAfterAdded(clone);
       }
