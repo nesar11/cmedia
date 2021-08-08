@@ -104,7 +104,6 @@ export class FabricjsEditorComponent implements AfterViewInit {
   previewVideo() {
     // this.rec.stop();
     this.exportVid(new Blob(this.mediaChunks, { type: 'video/webm' }));
-    location.reload();
   }
 
   declareRecording() {
