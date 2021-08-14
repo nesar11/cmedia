@@ -105,7 +105,7 @@ export class FabricjsEditorComponent implements AfterViewInit {
   }
 
   declareRecording() {
-    var canvas = document.querySelector("canvas");
+    var canvas = <CanvasElement> document.querySelector('canvas');
     const stream = canvas.captureStream(25);
     this.rec = new MediaRecorder(stream);
   }
@@ -735,4 +735,8 @@ export class FabricjsEditorComponent implements AfterViewInit {
     this.figureEditor = false;
   }
 
+}
+
+interface CanvasElement extends HTMLCanvasElement {
+  captureStream(frameRate?: number): MediaStream;
 }
